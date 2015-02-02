@@ -10,8 +10,11 @@
  *******************************************************************************/
 package org.rebaze.tools.maven.treesync;
 
+import java.io.File;
 import java.rmi.Remote;
 import java.util.*;
+
+import javax.management.remote.TargetedNotification;
 
 import org.apache.maven.artifact.versioning.VersionRange;
 import org.apache.maven.plugin.AbstractMojo;
@@ -41,8 +44,7 @@ import org.eclipse.aether.resolution.ArtifactResult;
  *
  * @goal sync-tree
  */
-public class ResolveArtifactMojo
-        extends AbstractMojo {
+public class ResolveArtifactMojo extends AbstractMojo {
 
     /**
      * The {@code targetRepo} to be synced. User needs deployment rights.
@@ -81,45 +83,56 @@ public class ResolveArtifactMojo
     //@Parameter( defaultValue = "${project}", readonly = true, required = true )
     protected MavenProject project;
 
-    public void execute()
-            throws MojoExecutionException, MojoFailureException {
+    public void execute() throws MojoExecutionException, MojoFailureException {
         Set<Artifact> topTreashold = getTopTreashold();
         try {
             addTransitive(topTreashold);
         } catch (DependencyCollectionException e) {
             throw new MojoExecutionException("Problem collecting dependencies.", e);
         }
-
-        getLog().info(" Found Plugins: " + topTreashold.size());
-
-        // select target repo:
-        RemoteRepository targetRepo = null;
-        for (RemoteRepository candidateRepo : remoteRepos ) {
-            getLog().info("Candidate for sync: " + candidateRepo.getId());
-            if (candidateRepo.getId().equals(this.deploymentTarget)) {
-                targetRepo = candidateRepo;
-                break;
+        getLog().info("Total dependency treashold  : " + topTreashold.size() + " artifacts.");
+        RemoteRepository targetRepo = getTargetRepository();
+        Set<Artifact> tobedeployed = findUnresolvableArtifacts(topTreashold, repositories(targetRepo));
+        getLog().info("New artifacts               : " + tobedeployed.size() + "  (out of " + topTreashold.size() + ")");
+        for (Artifact a : tobedeployed) {
+            try {
+                Artifact resolvedArtifact = resolve(a, remoteRepos);
+                if (resolvedArtifact == null) {
+                    getLog().error("Cannot resolve artifact " + a + " at all.");
+                } else {
+                    getLog().info("+ Deploy: " + a + " (to " + targetRepo.getUrl() + ")");
+                    deploy(resolvedArtifact, targetRepo);
+                }
+            } catch (Exception e) {
+                getLog().error("Deployment failed for artifact  : " + a, e);
             }
         }
+    }
 
-        if (targetRepo != null ) {
-            for (Artifact a : topTreashold) {
-                // then  resolve & deploy:
-                if (!isAlreadyAvailable(a)) {
-                    //getLog().info(" + New Artifact to be deployed: " + a.toString());
-                    try {
-                        deploy(a,targetRepo);
-                        getLog().info("Successfully deployed new artifact: " + a.toString() + " to " + targetRepo.getId());
-                    } catch (DeploymentException e) {
-                        getLog().warn("Deployment of " + a.toString() + " failed with " + e.getMessage());
-                    }
-                } else {
-                    getLog().info("Artifact + " + a.toString() + " already availeble.");
-                }
-                getLog().info(" + " + a.toString());
+    private Set<Artifact> findUnresolvableArtifacts(Set<Artifact> topTreashold, List<RemoteRepository> repos) throws MojoExecutionException {
+        Set<Artifact> tobedeployed = new HashSet<Artifact>();
+        for (Artifact a : topTreashold) {
+            if (resolve(a, repos) == null) {
+                tobedeployed.add(a);
+            } 
+        }
+        return tobedeployed;
+    }
+
+    private RemoteRepository getTargetRepository() {
+        for (RemoteRepository candidateRepo : remoteRepos) {
+            getLog().info("Candidate for sync: " + candidateRepo.getId());
+            if (candidateRepo.getId().equals(this.deploymentTarget)) {
+                return candidateRepo;
             }
-        }else {
-            getLog().warn("Target repo " + deploymentTarget + " is not among configured repositories.");
+        }
+        // see if we can map it as file
+        File f = new File(deploymentTarget);
+        if (f.exists() && f.isDirectory()) {
+            return new RemoteRepository.Builder("Lcoal Delta Repo", "default", f.toURI().toString()).build();
+        } else {
+            throw new IllegalArgumentException("Invalid value for {deploymentTarget}: " + deploymentTarget
+                + ". Must be either a valid repository ID or an existing local folder.");
         }
     }
 
@@ -130,9 +143,31 @@ public class ResolveArtifactMojo
         repoSystem.deploy(repoSession, deployRequest);
     }
 
-    private boolean isAlreadyAvailable(Artifact a) {
-        // TODO fix this
-        return true;
+    private Artifact resolve(Artifact a, List<RemoteRepository> selectedRepos) throws MojoExecutionException {
+        ArtifactRequest request = new ArtifactRequest();
+        request.setArtifact(a);
+        request.setRepositories(selectedRepos);
+        
+        ArtifactResult result = null;
+        try {
+            result = repoSystem.resolveArtifact(repoSession, request);
+        } catch (ArtifactResolutionException e) {
+            //getLog().warn("Artifact " + a + " not in configured repo: " + selectedRepos);
+            //throw new MojoExecutionException(e.getMessage(), e);
+        }
+        if (result != null && !result.isMissing()) {
+            return result.getArtifact();
+        } else {
+            return null;
+        }
+    }
+
+    private List<RemoteRepository> repositories(RemoteRepository... repo) {
+        List<RemoteRepository> list = new ArrayList<RemoteRepository>(1);
+        for (RemoteRepository r : list) {
+            list.add(r);
+        }
+        return list;
     }
 
     private void addTransitive(Set<Artifact> topTreashold) throws DependencyCollectionException {
@@ -148,38 +183,11 @@ public class ResolveArtifactMojo
         for (Artifact a : lister) {
             topTreashold.add(a);
         }
-
     }
 
-    private org.eclipse.aether.artifact.Artifact toAetherArtifact( org.apache.maven.artifact.Artifact a ) {
-        return new org.eclipse.aether.artifact.DefaultArtifact(a.getGroupId(),a.getArtifactId(),a.getType(),a.getVersion());
-    }
-/**
-    private org.apache.maven.artifact.Artifact toMavenArtifact( org.eclipse.aether.artifact.Artifact a ){
-        return new org.apache.maven.artifact.DefaultArtifact(a.getGroupId(),a.getArtifactId(),VersionRange.createFromVersion(a.getVersion()),"compile",a.getExtension(),"",handler);
-    }
-**/
-    private void legacy() throws MojoFailureException, MojoExecutionException {
-        Artifact artifact;
-        try {
-            artifact = new DefaultArtifact("");
-        } catch (IllegalArgumentException e) {
-            throw new MojoFailureException(e.getMessage(), e);
-        }
-
-        ArtifactRequest request = new ArtifactRequest();
-        request.setArtifact(artifact);
-        request.setRepositories(project.getRemoteArtifactRepositories());
-
-        ArtifactResult result;
-        try {
-            result = repoSystem.resolveArtifact(repoSession, request);
-        } catch (ArtifactResolutionException e) {
-            throw new MojoExecutionException(e.getMessage(), e);
-        }
-
-        getLog().info("Resolved artifact " + artifact + " to " + result.getArtifact().getFile() + " from "
-                + result.getRepository());
+    private org.eclipse.aether.artifact.Artifact toAetherArtifact(org.apache.maven.artifact.Artifact a) {
+        //new org.eclipse.aether.artifact.DefaultArtifact()
+        return new org.eclipse.aether.artifact.DefaultArtifact(a.getGroupId(), a.getArtifactId(), a.getArtifactHandler().getExtension(), a.getVersion());
     }
 
     private Set<Artifact> getTopTreashold() {
@@ -198,12 +206,12 @@ public class ResolveArtifactMojo
 
     private void mapToAetherArtifacts(Set<Artifact> artifacts, Set<org.apache.maven.artifact.Artifact> plugins) {
         for (org.apache.maven.artifact.Artifact a : plugins) {
+            
             artifacts.add(toAetherArtifact(a));
         }
     }
 
-    class DependencyFlatDumper
-            implements DependencyVisitor, Iterable<Artifact> {
+    class DependencyFlatDumper implements DependencyVisitor, Iterable<Artifact> {
 
         private List<Artifact> flatDependencyList = new ArrayList<Artifact>();
 
@@ -215,7 +223,6 @@ public class ResolveArtifactMojo
         }
 
         public boolean visitLeave(DependencyNode node) {
-
             return true;
         }
 
