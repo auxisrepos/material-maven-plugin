@@ -21,6 +21,7 @@ import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.project.MavenProject;
+import org.eclipse.aether.DefaultRepositorySystemSession;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.artifact.Artifact;
@@ -33,10 +34,14 @@ import org.eclipse.aether.deployment.DeploymentException;
 import org.eclipse.aether.graph.Dependency;
 import org.eclipse.aether.graph.DependencyNode;
 import org.eclipse.aether.graph.DependencyVisitor;
+import org.eclipse.aether.repository.LocalRepository;
+import org.eclipse.aether.repository.LocalRepositoryManager;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.eclipse.aether.resolution.ArtifactRequest;
 import org.eclipse.aether.resolution.ArtifactResolutionException;
 import org.eclipse.aether.resolution.ArtifactResult;
+import org.eclipse.aether.resolution.VersionRangeRequest;
+import org.eclipse.aether.resolution.VersionRangeResult;
 
 /**
  * Syncronizes Project dependencies (plugin, reporting and build time deps) with a selected remote repository.
@@ -92,6 +97,7 @@ public class ResolveArtifactMojo extends AbstractMojo {
         }
         getLog().info("Total dependency treashold  : " + topTreashold.size() + " artifacts.");
         RemoteRepository targetRepo = getTargetRepository();
+       
         Set<Artifact> tobedeployed = findUnresolvableArtifacts(topTreashold, repositories(targetRepo));
         getLog().info("New artifacts               : " + tobedeployed.size() + "  (out of " + topTreashold.size() + ")");
         for (Artifact a : tobedeployed) {
@@ -112,7 +118,7 @@ public class ResolveArtifactMojo extends AbstractMojo {
     private Set<Artifact> findUnresolvableArtifacts(Set<Artifact> topTreashold, List<RemoteRepository> repos) throws MojoExecutionException {
         Set<Artifact> tobedeployed = new HashSet<Artifact>();
         for (Artifact a : topTreashold) {
-            if (resolve(a, repos) == null) {
+            if (resolveRanged(a, repos) == null) {
                 tobedeployed.add(a);
             } 
         }
@@ -155,7 +161,34 @@ public class ResolveArtifactMojo extends AbstractMojo {
             //getLog().warn("Artifact " + a + " not in configured repo: " + selectedRepos);
             //throw new MojoExecutionException(e.getMessage(), e);
         }
-        if (result != null && !result.isMissing()) {
+        if (result != null && result.isResolved()) {
+            getLog().info(" Artifact " + a + " resolved with " + result.getRepository().getId());
+            return result.getArtifact();
+        } else {
+            return null;
+        }
+    }
+    
+    private Artifact resolveRanged(Artifact a, List<RemoteRepository> selectedRepos) throws MojoExecutionException {
+        /**
+        File baseLocal = new File("c:\\devel\\cache");
+        baseLocal.mkdirs();
+        LocalRepository localRepo = new LocalRepository(baseLocal);
+        repoSystem.newLocalRepositoryManager(repoSession, localRepo);
+       **/
+        ArtifactRequest request = new ArtifactRequest();
+        request.setArtifact(a);
+        request.setRepositories(selectedRepos);
+        ArtifactResult result = null;
+        try {
+            result = repoSystem.resolveArtifact(repoSession, request);
+        } catch (ArtifactResolutionException e) {
+            //getLog().warn("Artifact " + a + " not in configured repo: " + selectedRepos);
+            //throw new MojoExecutionException(e.getMessage(), e);
+        }
+        if (result != null) {
+            
+            getLog().info(" Artifact " + a + " resolved with " + result.getRepository().getId());
             return result.getArtifact();
         } else {
             return null;
@@ -172,7 +205,6 @@ public class ResolveArtifactMojo extends AbstractMojo {
 
     private void addTransitive(Set<Artifact> topTreashold) throws DependencyCollectionException {
         DependencyFlatDumper lister = new DependencyFlatDumper();
-
         for (Artifact artifact : topTreashold) {
             CollectRequest collectRequest = new CollectRequest();
             collectRequest.setRoot(new Dependency(artifact, "compile"));
@@ -217,7 +249,6 @@ public class ResolveArtifactMojo extends AbstractMojo {
 
         public boolean visitEnter(DependencyNode node) {
             Artifact a = node.getArtifact();
-            Dependency d = node.getDependency();
             flatDependencyList.add(a);
             return true;
         }
