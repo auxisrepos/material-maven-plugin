@@ -47,9 +47,9 @@ public class ResolveArtifactMojo
     /**
      * The {@code targetRepo} to be synced. User needs deployment rights.
      *
-     * @parameter expression="${sync-tree.targetRepo}"
+     * @parameter expression="${deploymentTarget}"
      */
-    private String targetRepo;
+    private String deploymentTarget;
 
     /**
      * The entry point to Aether, i.e. the component doing all the work.
@@ -96,7 +96,7 @@ public class ResolveArtifactMojo
         RemoteRepository targetRepo = null;
         for (RemoteRepository candidateRepo : remoteRepos ) {
             getLog().info("Candidate for sync: " + candidateRepo.getId());
-            if (candidateRepo.getId().equals(this.targetRepo)) {
+            if (candidateRepo.getId().equals(this.deploymentTarget)) {
                 targetRepo = candidateRepo;
                 break;
             }
@@ -119,7 +119,7 @@ public class ResolveArtifactMojo
                 getLog().info(" + " + a.toString());
             }
         }else {
-            getLog().warn("Target repo " + targetRepo + " is not among configured repositories.");
+            getLog().warn("Target repo " + deploymentTarget + " is not among configured repositories.");
         }
     }
 
