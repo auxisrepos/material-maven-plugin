@@ -1,26 +1,47 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
-<!-- ~ Copyright (c) 2015. Rebaze, GmbH. ~ All rights reserved. This program 
-	and the accompanying materials ~ are made available under the terms of the 
-	Apache Software License v2.0 ~ which accompanies this distribution, and is 
-	available at ~ http://www.apache.org/licenses/ ~ ~ Contributors: ~ Rebaze 
-	GmbH - Synchronization Mojo ~ Sonatype, Inc. - Aether API -->
-
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>org.rebaze.tools</groupId>
-	<artifactId>maven-sync-plugin</artifactId>
+	<groupId>org.auxis.maven</groupId>
+	<artifactId>maven-material-plugin</artifactId>
 	<version>0.1.0-SNAPSHOT</version>
 	<packaging>maven-plugin</packaging>
-	
-	<name>Maven Bill Plugin</name>
-	<inceptionYear>2015</inceptionYear>
 
+	<name>auxis - Maven Material Plugin</name>
+	
+	<inceptionYear>2015</inceptionYear>
 	<properties>
 		<mavenVersion>3.2.5</mavenVersion>
 		<aetherVersion>1.0.2.v20150114</aetherVersion>
 	</properties>
+
+	<licenses>
+		<license>
+			<name>The Apache License, Version 2.0</name>
+			<url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+		</license>
+	</licenses>
+
+	<developers>
+		<developer>
+			<name>Toni Menzel</name>
+			<email>toni.menzel@rebaze.com</email>
+			<organization>rebaze GmbH</organization>
+			<organizationUrl>http://www.rebaze.de</organizationUrl>
+		</developer>
+		<developer>
+			<name>Harold Finch</name>
+			<email>harold.finch@rebaze.com</email>
+			<organization>rebaze GmbH</organization>
+			<organizationUrl>http://www.rebaze.de</organizationUrl>
+		</developer>
+	</developers>
+
+	<scm>
+		<connection>scm:git:git@github.com:auxisrepos/maven-material-plugin.git</connection>
+		<developerConnection>scm:git:git@github.com:auxisrepos/maven-material-plugin.git</developerConnection>
+		<url>git@github.com:auxisrepos/maven-material-plugin.git</url>
+	</scm>
 
 	<build>
 		<pluginManagement>
