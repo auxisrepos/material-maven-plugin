@@ -156,7 +156,6 @@ public class CreateReactorBillMojo extends AbstractMojo {
     }
 
     private org.eclipse.aether.artifact.Artifact toAetherArtifact(org.apache.maven.artifact.Artifact a) {
-        //new org.eclipse.aether.artifact.DefaultArtifact()
         return new org.eclipse.aether.artifact.DefaultArtifact(a.getGroupId(), a.getArtifactId(), a.getArtifactHandler().getExtension(),
             a.getVersion());
     }
