@@ -13,20 +13,10 @@
 	<artifactId>maven-sync-plugin</artifactId>
 	<version>0.1.0-SNAPSHOT</version>
 	<packaging>maven-plugin</packaging>
-	<!-- <parent> <groupId>org.rebaze.tools</groupId> <artifactId>master</artifactId> 
-		<version>0.1.0-SNAPSHOT</version> </parent> -->
-	<name>Rebaze Tools - Maven Sync Plugin</name>
-	<description>
-        A simple Maven plugin using Aether.
-    </description>
-	<inceptionYear>2010</inceptionYear>
+	
+	<name>Maven Bill Plugin</name>
+	<inceptionYear>2015</inceptionYear>
 
-	<prerequisites>
-		<maven>3.2.5</maven>
-	</prerequisites>
-
-	<!-- mvn org.rebaze.tools:maven-sync-plugin:0.1.0-SNAPSHOT:sync-tree -s 
-		c:\Users\XNE1285\.m2\unsafe-settings.xml -->
 	<properties>
 		<mavenVersion>3.2.5</mavenVersion>
 		<aetherVersion>1.0.2.v20150114</aetherVersion>
@@ -46,7 +36,6 @@
 			</plugins>
 		</pluginManagement>
 	</build>
-
 
 	<dependencies>
 		<dependency>
@@ -90,43 +79,4 @@
 			<version>3.4</version>
 		</dependency>
 	</dependencies>
-
-	<profiles>
-		<profile>
-			<id>run-its</id>
-			<build>
-				<plugins>
-					<plugin>
-						<artifactId>maven-invoker-plugin</artifactId>
-						<version>1.9</version>
-						<configuration>
-							<debug>false</debug>
-							<projectsDirectory>src/it</projectsDirectory>
-							<cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
-							<pomIncludes>
-								<pomInclude>*/pom.xml</pomInclude>
-							</pomIncludes>
-							<preBuildHookScript>setup</preBuildHookScript>
-							<postBuildHookScript>verify</postBuildHookScript>
-							<localRepositoryPath>${project.build.directory}/local-repo</localRepositoryPath>
-							<settingsFile>src/it/settings.xml</settingsFile>
-							<goals>
-								<goal>clean</goal>
-								<goal>validate</goal>
-							</goals>
-						</configuration>
-						<executions>
-							<execution>
-								<id>integration-test</id>
-								<goals>
-									<goal>install</goal>
-									<goal>run</goal>
-								</goals>
-							</execution>
-						</executions>
-					</plugin>
-				</plugins>
-			</build>
-		</profile>
-	</profiles>
 </project>
