@@ -49,12 +49,12 @@ public class CreateReactorBillMojo extends AbstractMojo {
     /**
      * File to be created (fully qualified)
      *
-     * @parameter expression="${bill}"
+     * @parameter property="bill"
      */
     private File bill;
 
     /**
-     * @parameter expression="${ignoreSnapshots}" default-value=true
+     * @parameter property="ignoreSnapshots" default-value=true
      */
     private boolean ignoreSnapshots;
 
