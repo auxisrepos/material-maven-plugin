@@ -6,9 +6,10 @@
  * http://www.apache.org/licenses/
  *
  * Contributors:
- *    Sonatype, Inc. - initial API and implementation
+ *    Apache Community - initial mojo (dependency plugin)
+ *    Rebaze - collect them all.
  *******************************************************************************/
-package org.rebaze.tools.maven.treesync;
+package org.auxis.maven.materialplugin;
 
 import java.io.BufferedWriter;
 import java.io.File;
