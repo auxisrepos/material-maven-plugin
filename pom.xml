@@ -7,11 +7,11 @@
         <version>0.1.0</version>
     </parent>
 	<groupId>org.auxis.maven</groupId>
-	<artifactId>maven-material-plugin</artifactId>
+	<artifactId>material-maven-plugin</artifactId>
 	<version>0.1.1-SNAPSHOT</version>
 	<packaging>maven-plugin</packaging>
 
-	<name>auxis - Maven Material Plugin</name>
+	<name>auxis - Material Maven Plugin</name>
 	
 	<inceptionYear>2015</inceptionYear>
 	<properties>
@@ -42,9 +42,9 @@
 	</developers>
 
 	<scm>
-		<connection>scm:git:git@github.com:auxisrepos/maven-material-plugin.git</connection>
-		<developerConnection>scm:git:git@github.com:auxisrepos/maven-material-plugin.git</developerConnection>
-		<url>git@github.com:auxisrepos/maven-material-plugin.git</url>
+		<connection>scm:git:git@github.com:auxisrepos/material-maven-plugin.git</connection>
+		<developerConnection>scm:git:git@github.com:auxisrepos/material-maven-plugin.git</developerConnection>
+		<url>git@github.com:auxisrepos/material-maven-plugin.git</url>
 	  <tag>HEAD</tag>
   </scm>
 
