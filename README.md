@@ -1,4 +1,4 @@
-# maven-material-plugin
+# material-maven-plugin
 
 [![Build Status](https://travis-ci.org/auxis/maven-material-plugin.svg?branch=master)](https://travis-ci.org/auxis/maven-material-plugin)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.auxis.maven/maven-material-plugin/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.auxis.maven/maven-material-plugin)
