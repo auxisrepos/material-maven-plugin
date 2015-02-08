@@ -6,9 +6,10 @@
  * http://www.apache.org/licenses/
  *
  * Contributors:
- *    Sonatype, Inc. - initial API and implementation
+ *    Apache Community - initial mojo (dependency plugin)
+ *    Rebaze - collect them all.
  *******************************************************************************/
-package org.rebaze.tools.maven.treesync;
+package org.auxis.maven.materialplugin;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -48,12 +49,12 @@ public class CreateReactorBillMojo extends AbstractMojo {
     /**
      * File to be created (fully qualified)
      *
-     * @parameter expression="${bill}"
+     * @parameter property="bill"
      */
     private File bill;
 
     /**
-     * @parameter expression="${ignoreSnapshots}" default-value=true
+     * @parameter property="ignoreSnapshots" default-value=true
      */
     private boolean ignoreSnapshots;
 
