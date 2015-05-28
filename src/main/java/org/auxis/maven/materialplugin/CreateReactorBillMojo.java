@@ -114,7 +114,10 @@ public class CreateReactorBillMojo extends AbstractMojo
         Set<Artifact> projectDeps = getProjectDepedencies();
         Set<Artifact> transitiveDeps = getProjectDepedencies();
         billSet.add( toAetherArtifact( project.getArtifact() ) );
-        billSet.add( toAetherArtifact( project.getParentArtifact() ) );
+        if (project.getParentArtifact() != null)
+        {
+            billSet.add( toAetherArtifact( project.getParentArtifact() ) );
+        }
 
         for ( Artifact a : projectDeps )
         {
@@ -248,7 +251,6 @@ public class CreateReactorBillMojo extends AbstractMojo
 
     private org.eclipse.aether.artifact.Artifact toAetherArtifact( org.apache.maven.artifact.Artifact a )
     {
-
         return new org.eclipse.aether.artifact.DefaultArtifact( a.getGroupId(), a.getArtifactId(), a.getClassifier(), a.getArtifactHandler().getExtension(),
             a.getVersion() );
     }
