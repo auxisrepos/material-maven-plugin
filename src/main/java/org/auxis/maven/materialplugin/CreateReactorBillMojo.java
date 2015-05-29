@@ -11,10 +11,8 @@
  *******************************************************************************/
 package org.auxis.maven.materialplugin;
 
-import org.apache.maven.artifact.factory.DefaultArtifactFactory;
 import org.apache.maven.artifact.handler.manager.ArtifactHandlerManager;
 import org.apache.maven.artifact.repository.ArtifactRepository;
-import org.apache.maven.artifact.repository.MavenArtifactRepository;
 import org.apache.maven.model.building.ModelBuildingRequest;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -23,7 +21,6 @@ import org.apache.maven.project.DefaultProjectBuildingRequest;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.ProjectBuilder;
 import org.apache.maven.project.ProjectBuildingRequest;
-import org.apache.maven.settings.Settings;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.artifact.Artifact;
@@ -38,15 +35,7 @@ import org.eclipse.aether.resolution.ArtifactResult;
 import org.eclipse.aether.resolution.DependencyRequest;
 import org.eclipse.aether.resolution.DependencyResult;
 
-import com.google.common.util.concurrent.CycleDetectingLockFactory.WithExplicitOrdering;
-
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.util.*;
 
 /**
@@ -54,7 +43,8 @@ import java.util.*;
  *
  * @goal create-bill
  */
-public class CreateReactorBillMojo extends AbstractMojo {
+public class CreateReactorBillMojo extends AbstractMojo
+{
 
     private static final String BILL_CACHE = "BILL";
 
@@ -114,90 +104,124 @@ public class CreateReactorBillMojo extends AbstractMojo {
      */
     private ProjectBuilder mavenProjectBuilder;
 
-    public void execute() throws MojoExecutionException, MojoFailureException {
-        if (bill == null) {
-            bill = new File(project.getBasedir(), "/target/bill.txt");
+    public void execute() throws MojoExecutionException, MojoFailureException
+    {
+        if ( bill == null )
+        {
+            bill = new File( project.getBasedir(), "/target/bill.txt" );
         }
         Set<Artifact> billSet = new HashSet<Artifact>();
         Set<Artifact> projectDeps = getProjectDepedencies();
         Set<Artifact> transitiveDeps = getProjectDepedencies();
-        billSet.add(toAetherArtifact(project.getArtifact()));
-        
-        if (project.getParentArtifact() != null) {
-            billSet.add(toAetherArtifact(project.getParentArtifact()));
+        billSet.add( toAetherArtifact( project.getArtifact() ) );
+
+        if ( project.getParentArtifact() != null )
+        {
+            billSet.add( toAetherArtifact( project.getParentArtifact() ) );
         }
 
-        for (Artifact a : projectDeps) {
-            if (a.isSnapshot() && ignoreSnapshots) {
+        for ( Artifact a : projectDeps )
+        {
+            if ( a.isSnapshot() && ignoreSnapshots )
+            {
                 // skip snapshot
-            }else if (billSet.contains(a)) {
+            }
+            else if ( billSet.contains( a ) )
+            {
                 // do nothing
-            } else {
-                try {
-                    addTransitive(transitiveDeps);
-                } catch (Exception e) {
-                    getLog().error("Problem collection deps.", e);
+            }
+            else
+            {
+                try
+                {
+                    addTransitive( transitiveDeps );
                 }
-                billSet.addAll(transitiveDeps);
+                catch ( Exception e )
+                {
+                    getLog().error( "Problem collection deps.", e );
+                }
+                billSet.addAll( transitiveDeps );
             }
         }
-        getLog().info("Total bill size : " + billSet.size() + " artifacts. This project: " + projectDeps.size() + ".");
+        getLog().info( "Total bill size : " + billSet.size() + " artifacts. This project: " + projectDeps.size() + "." );
 
-        writeBillToDisk(billSet);
+        writeBillToDisk( billSet );
     }
 
-    private void writeBillToDisk(Set<Artifact> billSet) {
-        Set<String> dedup = new HashSet<String>(billSet.size());
-        
-        for (Artifact a : billSet) {
-            if (!a.isSnapshot()) {
-                dedup.add(a.toString());
+    private void writeBillToDisk( Set<Artifact> billSet )
+    {
+        Set<String> dedup = new HashSet<String>( billSet.size() );
+
+        for ( Artifact a : billSet )
+        {
+            if ( !a.isSnapshot() )
+            {
+                dedup.add( a.toString() );
             }
         }
         //merge
-        for (String older : readBillCache()) {
-            dedup.add(older);
+        for ( String older : readBillCache() )
+        {
+            dedup.add( older );
         }
-        List<String> feed = new ArrayList<String>(dedup);
+        List<String> feed = new ArrayList<String>( dedup );
 
-        Collections.sort(feed);
-        try {
-            BufferedWriter writer = new BufferedWriter(new FileWriter(this.bill));
-            for (String line : feed) {
-                writer.write(line);
+        Collections.sort( feed );
+        try
+        {
+            BufferedWriter writer = new BufferedWriter( new FileWriter( this.bill ) );
+            for ( String line : feed )
+            {
+                writer.write( line );
                 writer.newLine();
             }
             writer.close();
-        } catch (IOException e) {
-            getLog().error("Problem writing bill to " + bill.getAbsolutePath() + ".");
+        }
+        catch ( IOException e )
+        {
+            getLog().error( "Problem writing bill to " + bill.getAbsolutePath() + "." );
         }
 
-        for (ArtifactRepository repos : project.getRemoteArtifactRepositories()) {
-            getLog().info("Native artifact repository used: \r\n" + repos);
+        for ( ArtifactRepository repos : project.getRemoteArtifactRepositories() )
+        {
+            getLog().info( "Native artifact repository used: \r\n" + repos );
         }
-        for (RemoteRepository repos : remoteRepos) {
-            getLog().info("Aether repository used: " + repos);
+        for ( RemoteRepository repos : remoteRepos )
+        {
+            getLog().info( "Aether repository used: " + repos );
         }
-        getLog().info("Done. Bill updated : " + bill.getAbsolutePath() + ". (Repos: " + project.getRemoteArtifactRepositories().size() + ")");
+        getLog().info( "Done. Bill updated : " + bill.getAbsolutePath() + ". (Repos: " + project.getRemoteArtifactRepositories().size() + ")" );
     }
 
-    private Set<String> readBillCache() {
+    private Set<String> readBillCache()
+    {
         Set<String> res = new HashSet<String>();
-        if (bill.exists()) {
+        if ( bill.exists() )
+        {
             BufferedReader reader = null;
-            try {
-                reader = new BufferedReader(new FileReader(bill));
+            try
+            {
+                reader = new BufferedReader( new FileReader( bill ) );
                 String line = null;
-                while ((line = reader.readLine()) != null) {
-                       res.add(line);
+                while ( ( line = reader.readLine() ) != null )
+                {
+                    res.add( line );
                 }
-            } catch (IOException e) {
-                getLog().error("Problem reading existing bill: " + bill.getAbsolutePath(),e);
-            } finally {
-                if (reader != null) {
-                    try {
+            }
+            catch ( IOException e )
+            {
+                getLog().error( "Problem reading existing bill: " + bill.getAbsolutePath(), e );
+            }
+            finally
+            {
+                if ( reader != null )
+                {
+                    try
+                    {
                         reader.close();
-                    } catch (IOException e) {
+                    }
+                    catch ( IOException e )
+                    {
                         e.printStackTrace();
                     }
                 }
@@ -206,86 +230,103 @@ public class CreateReactorBillMojo extends AbstractMojo {
         return res;
     }
 
-    private void addTransitive(Set<Artifact> topTreashold) {
+    private void addTransitive( Set<Artifact> topTreashold )
+    {
         DependencyFlatDumper lister = new DependencyFlatDumper();
-        Set<Artifact> input = new HashSet<>(topTreashold);
-        for (Artifact artifact : input) {
-            try {
+        Set<Artifact> input = new HashSet<>( topTreashold );
+        for ( Artifact artifact : input )
+        {
+            try
+            {
                 CollectRequest collectRequest = new CollectRequest();
-                collectRequest.setRoot(new Dependency(artifact, "compile"));
-                collectRequest.setRepositories(remoteRepos);
+                collectRequest.setRoot( new Dependency( artifact, "compile" ) );
+                collectRequest.setRepositories( remoteRepos );
 
                 ArtifactRequest artifactRequest = new ArtifactRequest();
-                artifactRequest.setArtifact(artifact);
-                artifactRequest.setRepositories(remoteRepos);
+                artifactRequest.setArtifact( artifact );
+                artifactRequest.setRepositories( remoteRepos );
 
                 // ArtifactResult res = repoSystem.resolveArtifact( repoSession, artifactRequest );
                 DependencyRequest depReq = new DependencyRequest();
-                depReq.setCollectRequest(collectRequest);
-                DependencyResult resDeps = repoSystem.resolveDependencies(repoSession, depReq);
+                depReq.setCollectRequest( collectRequest );
+                DependencyResult resDeps = repoSystem.resolveDependencies( repoSession, depReq );
 
-                for (ArtifactResult ar : resDeps.getArtifactResults()) {
+                for ( ArtifactResult ar : resDeps.getArtifactResults() )
+                {
                     org.apache.maven.artifact.Artifact mavenArtifact = null;
-                    try {
-                        topTreashold.add(ar.getArtifact());
+                    try
+                    {
+                        topTreashold.add( ar.getArtifact() );
 
                         ProjectBuildingRequest reqProjectBuilder = new DefaultProjectBuildingRequest();
-                        reqProjectBuilder.setRepositorySession(repoSession);
-                        reqProjectBuilder.setValidationLevel(ModelBuildingRequest.VALIDATION_LEVEL_MINIMAL);
-                        reqProjectBuilder.setSystemProperties(System.getProperties());
+                        reqProjectBuilder.setRepositorySession( repoSession );
+                        reqProjectBuilder.setValidationLevel( ModelBuildingRequest.VALIDATION_LEVEL_MINIMAL );
+                        reqProjectBuilder.setSystemProperties( System.getProperties() );
                         //Properties p = new Properties();
                         //p.put("java.home","c:/devel/jdk1.7.0_51");
                         //  reqProjectBuilder.setUserProperties(p);
 
-                        reqProjectBuilder.setRemoteRepositories(project.getRemoteArtifactRepositories());
-                        mavenArtifact = toMavenArtifact(artifact);
-                        MavenProject subProject = mavenProjectBuilder.build(mavenArtifact, reqProjectBuilder).getProject();
-                        if (subProject.getParentArtifact() != null) {
-                            topTreashold.add(toAetherArtifact(subProject.getParentArtifact()));
+                        reqProjectBuilder.setRemoteRepositories( project.getRemoteArtifactRepositories() );
+                        mavenArtifact = toMavenArtifact( artifact );
+                        MavenProject subProject = mavenProjectBuilder.build( mavenArtifact, reqProjectBuilder ).getProject();
+                        if ( subProject.getParentArtifact() != null )
+                        {
+                            topTreashold.add( toAetherArtifact( subProject.getParentArtifact() ) );
                         }
-                    } catch (Exception e) {
+                    }
+                    catch ( Exception e )
+                    {
                         getLog()
                             .warn(
                                 "Problem building complete graph for Artifact" + ar.getArtifact() + " -> " + mavenArtifact + " (" + e.getMessage()
-                                    + ") ");
+                                    + ") " );
                     }
                 }
-                CollectResult collectResult = repoSystem.collectDependencies(repoSession, collectRequest);
-                collectResult.getRoot().accept(lister);
-            } catch (Exception e) {
-                getLog().warn("Problem resolving " + artifact + " (" + e.getMessage() + ")");
+                CollectResult collectResult = repoSystem.collectDependencies( repoSession, collectRequest );
+                collectResult.getRoot().accept( lister );
+            }
+            catch ( Exception e )
+            {
+                getLog().warn( "Problem resolving " + artifact + " (" + e.getMessage() + ")" );
             }
         }
-        for (Artifact a : lister) {
+        for ( Artifact a : lister )
+        {
             //topTreashold.add(a);
         }
     }
 
-    private org.eclipse.aether.artifact.Artifact toAetherArtifact(org.apache.maven.artifact.Artifact a) {
-        return new org.eclipse.aether.artifact.DefaultArtifact(a.getGroupId(), a.getArtifactId(), a.getClassifier(), a.getArtifactHandler()
-            .getExtension(), a.getVersion());
+    private org.eclipse.aether.artifact.Artifact toAetherArtifact( org.apache.maven.artifact.Artifact a )
+    {
+        return new org.eclipse.aether.artifact.DefaultArtifact( a.getGroupId(), a.getArtifactId(), a.getClassifier(), a.getArtifactHandler()
+            .getExtension(), a.getVersion() );
     }
 
-    private org.apache.maven.artifact.Artifact toMavenArtifact(org.eclipse.aether.artifact.Artifact a) {
-        return new org.apache.maven.artifact.DefaultArtifact(a.getGroupId(), a.getArtifactId(), a.getVersion(), "compile", a.getExtension(),
-            a.getClassifier(), artifactHandlerManager.getArtifactHandler(a.getExtension()));
+    private org.apache.maven.artifact.Artifact toMavenArtifact( org.eclipse.aether.artifact.Artifact a )
+    {
+        return new org.apache.maven.artifact.DefaultArtifact( a.getGroupId(), a.getArtifactId(), a.getVersion(), "compile", a.getExtension(),
+            a.getClassifier(), artifactHandlerManager.getArtifactHandler( a.getExtension() ) );
     }
 
-    private Set<Artifact> getProjectDepedencies() {
+    private Set<Artifact> getProjectDepedencies()
+    {
         Set<Artifact> artifacts = new HashSet<Artifact>();
         final Set<org.apache.maven.artifact.Artifact> plugins = project.getPluginArtifacts();
-        mapToAetherArtifacts(artifacts, plugins);
+        mapToAetherArtifacts( artifacts, plugins );
         final Set<org.apache.maven.artifact.Artifact> reports = project.getReportArtifacts();
-        mapToAetherArtifacts(artifacts, reports);
-        mapToAetherArtifacts(artifacts, project.getAttachedArtifacts());
+        mapToAetherArtifacts( artifacts, reports );
+        mapToAetherArtifacts( artifacts, project.getAttachedArtifacts() );
         final Set<org.apache.maven.artifact.Artifact> deps = project.getDependencyArtifacts();
-        mapToAetherArtifacts(artifacts, deps);
-        if (project.getDependencyManagement() != null) {
-            for (org.apache.maven.model.Dependency dep : project.getDependencyManagement().getDependencies()) {
-                if (dep.getVersion() != null) {
-                    String extension = this.artifactHandlerManager.getArtifactHandler(dep.getType()).getExtension();
-                    artifacts.add(new org.eclipse.aether.artifact.DefaultArtifact(dep.getGroupId(), dep.getArtifactId(), dep.getClassifier(),
-                        extension, dep.getVersion()));
+        mapToAetherArtifacts( artifacts, deps );
+        if ( project.getDependencyManagement() != null )
+        {
+            for ( org.apache.maven.model.Dependency dep : project.getDependencyManagement().getDependencies() )
+            {
+                if ( dep.getVersion() != null )
+                {
+                    String extension = this.artifactHandlerManager.getArtifactHandler( dep.getType() ).getExtension();
+                    artifacts.add( new org.eclipse.aether.artifact.DefaultArtifact( dep.getGroupId(), dep.getArtifactId(), dep.getClassifier(),
+                        extension, dep.getVersion() ) );
                 }
             }
         }
@@ -293,28 +334,34 @@ public class CreateReactorBillMojo extends AbstractMojo {
         return artifacts;
     }
 
-    private void mapToAetherArtifacts(Set<Artifact> artifacts, Collection<org.apache.maven.artifact.Artifact> plugins) {
-        for (org.apache.maven.artifact.Artifact a : plugins) {
-            artifacts.add(toAetherArtifact(a));
+    private void mapToAetherArtifacts( Set<Artifact> artifacts, Collection<org.apache.maven.artifact.Artifact> plugins )
+    {
+        for ( org.apache.maven.artifact.Artifact a : plugins )
+        {
+            artifacts.add( toAetherArtifact( a ) );
         }
     }
 
-    class DependencyFlatDumper implements DependencyVisitor, Iterable<Artifact> {
+    class DependencyFlatDumper implements DependencyVisitor, Iterable<Artifact>
+    {
 
         private List<Artifact> flatDependencyList = new ArrayList<Artifact>();
 
-        public boolean visitEnter(DependencyNode node) {
+        public boolean visitEnter( DependencyNode node )
+        {
             Artifact a = node.getArtifact();
-            flatDependencyList.add(a);
+            flatDependencyList.add( a );
             return true;
         }
 
-        public boolean visitLeave(DependencyNode node) {
+        public boolean visitLeave( DependencyNode node )
+        {
             return true;
         }
 
         @Override
-        public Iterator<Artifact> iterator() {
+        public Iterator<Artifact> iterator()
+        {
             return flatDependencyList.iterator();
         }
     }
