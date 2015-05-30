@@ -34,6 +34,8 @@ import java.util.*;
 /**
  * Creates a bill of material for the reactor project.
  *
+ * Since this is all about reproducing a build in a different context we may call this halo-maven-plugin.
+ *
  * @goal deploy
  */
 public class DeployReactorBillMojo extends AbstractMojo
@@ -102,7 +104,6 @@ public class DeployReactorBillMojo extends AbstractMojo
     {
         if ( project.isExecutionRoot() )
         {
-            System.out.println( "Only run ONCE!!!!" );
             RemoteRepository targetRepository = selectTargetRepo(); //new RemoteRepository.Builder( "target", "default", "file:///Users/tonit/localrepo" ).build();
             List<RemoteRepository> allowedRepositories = calculateAllowedRepositories();
             List<String> sortedArtifacts = readInputBill();
@@ -110,12 +111,12 @@ public class DeployReactorBillMojo extends AbstractMojo
             {
                 List<Artifact> listOfArtifacts = parseAndResolveArtifacts( sortedArtifacts, allowedRepositories );
                 DeployRequest deployRequest = new DeployRequest();
+                deployRequest.setRepository( targetRepository );
 
                 for ( Artifact artifact : listOfArtifacts )
                 {
                     assert ( artifact.getFile() != null );
                     deployRequest.addArtifact( artifact );
-                    deployRequest.setRepository( targetRepository );
                 }
                 getLog().info( "Deployment of " + deployRequest.getArtifacts().size() + " artifacts .." );
 
