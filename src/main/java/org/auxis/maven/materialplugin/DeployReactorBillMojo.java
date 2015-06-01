@@ -43,7 +43,7 @@ public class DeployReactorBillMojo extends AbstractMojo
     /**
      * File to be created (fully qualified)
      *
-     * @parameter property="bill"
+     * @parameter property="bill" default-value="target/recording.txt"
      */
     private File bill;
 
@@ -104,33 +104,38 @@ public class DeployReactorBillMojo extends AbstractMojo
     {
         if ( project.isExecutionRoot() )
         {
-            RemoteRepository targetRepository = selectTargetRepo(); //new RemoteRepository.Builder( "target", "default", "file:///Users/tonit/localrepo" ).build();
-            List<RemoteRepository> allowedRepositories = calculateAllowedRepositories();
-            List<String> sortedArtifacts = readInputBill();
-            try
-            {
-                List<Artifact> listOfArtifacts = parseAndResolveArtifacts( sortedArtifacts, allowedRepositories );
-                DeployRequest deployRequest = new DeployRequest();
-                deployRequest.setRepository( targetRepository );
+            deployBill();
+        }
+    }
 
-                for ( Artifact artifact : listOfArtifacts )
-                {
-                    assert ( artifact.getFile() != null );
-                    deployRequest.addArtifact( artifact );
-                }
-                getLog().info( "Deployment of " + deployRequest.getArtifacts().size() + " artifacts .." );
+    private void deployBill()
+    {
+        RemoteRepository targetRepository = selectTargetRepo();
+        List<RemoteRepository> allowedRepositories = calculateAllowedRepositories();
+        List<String> sortedArtifacts = readInputBill();
+        try
+        {
+            List<Artifact> listOfArtifacts = parseAndResolveArtifacts( sortedArtifacts, allowedRepositories );
+            DeployRequest deployRequest = new DeployRequest();
+            deployRequest.setRepository( targetRepository );
 
-                DeployResult result = repoSystem.deploy( repoSession, deployRequest );
-                getLog().info( "Deployment Result: " + result.getArtifacts().size() );
-            }
-            catch ( DeploymentException e )
+            for ( Artifact artifact : listOfArtifacts )
             {
-                getLog().error( "Problem deploying set..!", e );
+                assert ( artifact.getFile() != null );
+                deployRequest.addArtifact( artifact );
             }
-            catch ( ArtifactResolutionException e )
-            {
-                getLog().error( "Problem resolving artifact(s)..!", e );
-            }
+            getLog().info( "Deployment of " + deployRequest.getArtifacts().size() + " artifacts .." );
+
+            DeployResult result = repoSystem.deploy( repoSession, deployRequest );
+            getLog().info( "Deployment Result: " + result.getArtifacts().size() );
+        }
+        catch ( DeploymentException e )
+        {
+            getLog().error( "Problem deploying set..!", e );
+        }
+        catch ( ArtifactResolutionException e )
+        {
+            getLog().error( "Problem resolving artifact(s)..!", e );
         }
     }
 
