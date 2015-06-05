@@ -7,8 +7,6 @@
  *******************************************************************************/
 package com.rebaze.maven.payload.plugin;
 
-import org.apache.maven.artifact.handler.manager.ArtifactHandlerManager;
-import org.apache.maven.artifact.repository.ArtifactRepository;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -38,12 +36,12 @@ import java.util.*;
  *
  * @goal deploy
  */
-public class DeployReactorBillMojo extends AbstractMojo
+public class DeployPayloadMojo extends AbstractMojo
 {
     /**
      * File to be created (fully qualified)
      *
-     * @parameter property="bill" default-value="target/recording.txt"
+     * @parameter property="bill" default-value="target/build.payload"
      */
     private File bill;
 
@@ -53,13 +51,6 @@ public class DeployReactorBillMojo extends AbstractMojo
      * @parameter property="targetRepositoryID"
      */
     private String targetRepositoryID;
-
-    /**
-     * Allowed repos
-     *
-     * @parameter property="allowedRepos"
-     */
-    private String[] allowedRepos;
 
     /**
      * The entry point to Aether, i.e. the component doing all the work.
@@ -85,16 +76,6 @@ public class DeployReactorBillMojo extends AbstractMojo
     private List<RemoteRepository> remoteRepos;
 
     /**
-     * @component
-     */
-    protected List<ArtifactRepository> reps;
-
-    /**
-     * @component
-     */
-    protected ArtifactHandlerManager artifactHandlerManager;
-
-    /**
      * @parameter default-value="${project}"
      * @readonly
      */
@@ -102,8 +83,11 @@ public class DeployReactorBillMojo extends AbstractMojo
 
     @Override public void execute() throws MojoExecutionException, MojoFailureException
     {
+        // TODO: only invoke reactor.
+
         if ( project.isExecutionRoot() )
         {
+
             deployBill();
         }
     }
@@ -111,11 +95,10 @@ public class DeployReactorBillMojo extends AbstractMojo
     private void deployBill()
     {
         RemoteRepository targetRepository = selectTargetRepo();
-        List<RemoteRepository> allowedRepositories = calculateAllowedRepositories();
         List<String> sortedArtifacts = readInputBill();
         try
         {
-            List<Artifact> listOfArtifacts = parseAndResolveArtifacts( sortedArtifacts, allowedRepositories );
+            List<Artifact> listOfArtifacts = parseAndResolveArtifacts( sortedArtifacts, remoteRepos );
             DeployRequest deployRequest = new DeployRequest();
             deployRequest.setRepository( targetRepository );
 
@@ -187,40 +170,18 @@ public class DeployReactorBillMojo extends AbstractMojo
         return resolve( artifactList, allowedRepositories );
     }
 
-    private List<RemoteRepository> calculateAllowedRepositories()
-    {
-        List<RemoteRepository> result = new ArrayList<>();
-        if ( allowedRepos == null || allowedRepos.length == 0 )
-        {
-            result = this.remoteRepos;
-        }
-        else
-        {
-            Set<String> allowed = new HashSet<>( Arrays.asList( allowedRepos ) );
-            for ( RemoteRepository repo : this.remoteRepos )
-            {
-                if ( allowed.contains( repo.getId() ) )
-                {
-                    result.add( repo );
-                }
-            }
-        }
-        for (RemoteRepository repo : result) {
-            getLog().info( "Allowed repo: " + repo );
-        }
-        getLog().info( "Repositories allowed for resolving: " + result );
-        return result;
-    }
-
     private List<Artifact> resolve( Collection<Artifact> artifacts, List<RemoteRepository> allowedRepositories ) throws ArtifactResolutionException
     {
         Collection<ArtifactRequest> artifactRequests = new ArrayList<>();
+        List<Artifact> result = new ArrayList<>( artifacts.size() );
+
         for ( Artifact a : artifacts )
         {
             ArtifactRequest request = new ArtifactRequest( a, allowedRepositories, null );
             artifactRequests.add( request );
+            result.add( a );
         }
-        List<Artifact> result = new ArrayList<>( artifacts.size() );
+
         List<ArtifactResult> reply = repoSystem.resolveArtifacts( repoSession, artifactRequests );
         for ( ArtifactResult res : reply )
         {
@@ -232,6 +193,7 @@ public class DeployReactorBillMojo extends AbstractMojo
             {
                 getLog().warn( "Artifact " + res.getArtifact() + " is still missing." );
             }
+
         }
         return result;
     }

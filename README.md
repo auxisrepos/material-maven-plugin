@@ -8,3 +8,8 @@ Output can be used to create delta maven repisitories.
 
 # Usage:
 mvn com.rebaze.maven:payload-maven-plugin:deploy
+
+Payload file is assumed to be in target/build.payload as produced by payload-maven-extension.
+
+You can set another file with -Dpayload=<file>
+
