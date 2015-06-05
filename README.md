@@ -11,5 +11,5 @@ mvn com.rebaze.maven:payload-maven-plugin:deploy
 
 Payload file is assumed to be in target/build.payload as produced by payload-maven-extension.
 
-You can set another file with -Dpayload=<file>
+You can set another file with -Dpayload=File
 
