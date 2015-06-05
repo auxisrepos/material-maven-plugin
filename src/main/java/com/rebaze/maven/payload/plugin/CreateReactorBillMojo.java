@@ -9,7 +9,7 @@
  * Apache Community - initial mojo (dependency plugin)
  * Rebaze - collect them all.
  *******************************************************************************/
-package org.auxis.maven.materialplugin;
+package com.rebaze.maven.payload.plugin;
 
 import org.apache.maven.artifact.handler.manager.ArtifactHandlerManager;
 import org.apache.maven.artifact.repository.ArtifactRepository;

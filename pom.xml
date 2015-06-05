@@ -9,11 +9,11 @@
         <version>0.1.2</version>
     </parent>
     <groupId>com.rebaze.maven</groupId>
-    <artifactId>material-maven-plugin</artifactId>
+    <artifactId>payload-maven-plugin</artifactId>
     <version>0.2.4-SNAPSHOT</version>
     <packaging>maven-plugin</packaging>
 
-    <name>Rebaze Material Maven Plugin - Material Maven Plugin</name>
+    <name>rebaze maven - Payload Maven Plugin</name>
 
     <inceptionYear>2015</inceptionYear>
     <properties>
@@ -44,13 +44,18 @@
     </developers>
 
     <scm>
-        <connection>scm:git:git@github.com:rebaze/material-maven-plugin.git</connection>
-        <developerConnection>scm:git:git@github.com:rebaze/material-maven-plugin.git</developerConnection>
-        <url>git@github.com:rebaze/material-maven-plugin.git</url>
+        <connection>scm:git:git@github.com:rebaze/payload-maven-plugin.git</connection>
+        <developerConnection>scm:git:git@github.com:rebaze/payload-maven-plugin.git</developerConnection>
+        <url>git@github.com:rebaze/payload-maven-plugin.git</url>
         <tag>HEAD</tag>
     </scm>
 
     <dependencies>
+        <dependency>
+            <groupId>com.rebaze.maven</groupId>
+            <artifactId>rebaze-maven-support</artifactId>
+            <version>0.1.1</version>
+        </dependency>
         <dependency>
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-core</artifactId>
