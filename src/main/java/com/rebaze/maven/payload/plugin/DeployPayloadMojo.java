@@ -10,6 +10,7 @@ package com.rebaze.maven.payload.plugin;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugins.annotations.*;
 import org.apache.maven.project.MavenProject;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
@@ -34,60 +35,48 @@ import java.util.*;
  *
  * Since this is all about reproducing a build in a different context we may call this halo-maven-plugin.
  *
- * @goal deploy
  */
+@Mojo(name = "deploy", defaultPhase = LifecyclePhase.DEPLOY, requiresDependencyResolution = ResolutionScope.NONE)
 public class DeployPayloadMojo extends AbstractMojo
 {
     /**
      * File to be created (fully qualified)
      *
-     * @parameter property="bill" default-value="target/build.payload"
      */
+    @Parameter(defaultValue = "target/build.payload", readonly = true, required = false)
     private File bill;
 
     /**
      * Target Repository ID
      *
-     * @parameter property="targetRepositoryID"
      */
+    @Parameter( readonly = true, required = true, property="targetRepositoryID")
     private String targetRepositoryID;
 
     /**
      * The entry point to Aether, i.e. the component doing all the work.
      *
-     * @component
      */
+    @Component
     private RepositorySystem repoSystem;
 
     /**
      * The current repository/network configuration of Maven.
-     *
-     * @parameter default-value="${repositorySystemSession}"
-     * @readonly
      */
+    @Parameter(defaultValue = "${repositorySystemSession}", readonly = true, required = true)
     private RepositorySystemSession repoSession;
-
+  
     /**
-     * The project's remote repositories to use for the resolution.
      *
-     * @parameter default-value="${project.remoteProjectRepositories}"
-     * @readonly
      */
-    private List<RemoteRepository> remoteRepos;
-
-    /**
-     * @parameter default-value="${project}"
-     * @readonly
-     */
+    @Parameter(defaultValue = "${project}", readonly = true, required = true)
     protected MavenProject project;
 
     @Override public void execute() throws MojoExecutionException, MojoFailureException
     {
         // TODO: only invoke reactor.
-
         if ( project.isExecutionRoot() )
         {
-
             deployBill();
         }
     }
@@ -98,7 +87,7 @@ public class DeployPayloadMojo extends AbstractMojo
         List<String> sortedArtifacts = readInputBill();
         try
         {
-            List<Artifact> listOfArtifacts = parseAndResolveArtifacts( sortedArtifacts, remoteRepos );
+            List<Artifact> listOfArtifacts = parseAndResolveArtifacts( sortedArtifacts, project.getRemoteProjectRepositories() );
             DeployRequest deployRequest = new DeployRequest();
             deployRequest.setRepository( targetRepository );
 
@@ -124,7 +113,7 @@ public class DeployPayloadMojo extends AbstractMojo
 
     private RemoteRepository selectTargetRepo()
     {
-        for ( RemoteRepository repo : this.remoteRepos )
+        for ( RemoteRepository repo : this.project.getRemoteProjectRepositories() )
         {
             getLog().info( "Using repo: " + repo );
             if ( repo.getId().equals( targetRepositoryID ) )
@@ -179,7 +168,6 @@ public class DeployPayloadMojo extends AbstractMojo
         {
             ArtifactRequest request = new ArtifactRequest( a, allowedRepositories, null );
             artifactRequests.add( request );
-            result.add( a );
         }
 
         List<ArtifactResult> reply = repoSystem.resolveArtifacts( repoSession, artifactRequests );
