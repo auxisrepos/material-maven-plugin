@@ -43,8 +43,8 @@ public class DeployPayloadMojo extends AbstractMojo
      * File to be created (fully qualified)
      *
      */
-    @Parameter(defaultValue = "target/build.payload", readonly = true, required = false)
-    private File bill;
+    @Parameter(defaultValue = "target/build.payload", readonly = true, required = false, property="payload")
+    private File payload;
 
     /**
      * Target Repository ID
@@ -126,7 +126,7 @@ public class DeployPayloadMojo extends AbstractMojo
 
     private List<String> readInputBill()
     {
-        File input = bill;
+        File input = payload;
         Set<String> artifacts = new HashSet<>();
         try ( BufferedReader reader = new BufferedReader( new FileReader( input ) ) )
         {
