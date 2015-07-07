@@ -7,9 +7,9 @@ A plugin collecting the total bill of payload for a maven reactor project includ
 Output can be used to create delta maven repisitories.
 
 # Usage:
-mvn com.rebaze.maven:payload-maven-plugin:deploy
+`mvn com.rebaze.maven:payload-maven-plugin:deploy`
 
-Payload file is assumed to be in target/build.payload as produced by payload-maven-extension.
+Payload file is assumed to be in `target/build.payload` as produced by payload-maven-extension.
 
 You can set another file with -Dpayload=File
 
